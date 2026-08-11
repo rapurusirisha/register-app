@@ -23,5 +23,10 @@ pipeline {
                 sh 'mvn test'
             }
         }
+        stage("SonarQube COde Quality check"){
+            steps{
+                
+            }
+        }
    }
 }
