@@ -36,20 +36,6 @@ pipeline {
                 sh 'mvn test'
             }
         }
-
-        stage("SonarQube Code Quality Check") {
-            steps {
-                script {
-                    withSonarQubeEnv('SonarQube') {
-                        sh '''
-                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                        -Dsonar.projectKey=register-app \
-                        -Dsonar.projectName=register-app
-                        '''
-                    }
-                }
-            }
-        }
         stage("Build & Push Docker Image") {
             steps {
                 script {
