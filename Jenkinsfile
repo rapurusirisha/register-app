@@ -1,13 +1,21 @@
 pipeline {
     agent { label 'Jenkins-agent' }
+
     environment {
-	    APP_NAME = "register-app-pipeline"
-            RELEASE = "1.0.0"
-            DOCKER_USER = "rapurusirisha"
-            DOCKER_PASS = 'Dockerhub'
-            IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
-            IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
-      }
+        APP_NAME = "register-app-pipeline"
+        RELEASE = "1.0.0"
+
+        DOCKER_USER = "rapurusirisha"
+        DOCKER_PASS = 'Dockerhub'
+
+        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
+        IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
+
+        // Nexus Details
+        NEXUS_URL = "http://52.66.28.176:8081"
+        NEXUS_SNAPSHOT_REPO = "maven-snapshots"
+        NEXUS_RELEASE_REPO = "maven-releases"
+    }
 
     stages {
 
@@ -36,55 +44,62 @@ pipeline {
                 sh 'mvn test'
             }
         }
-		stage("Deploy to Nexus") {
-    steps {
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'nexus',
-                usernameVariable: 'NEXUS_USERNAME',
-                passwordVariable: 'NEXUS_PASSWORD'
-            )
-        ]) {
-            sh '''
-                cat > settings.xml <<EOF
+
+        stage("Deploy to Nexus") {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'nexus',
+                        usernameVariable: 'NEXUS_USERNAME',
+                        passwordVariable: 'NEXUS_PASSWORD'
+                    )
+                ]) {
+
+                    sh '''
+                        cat > settings.xml <<EOF
 <settings>
     <servers>
-        <server>
-            <id>nexus-releases</id>
-            <username>${NEXUS_USERNAME}</username>
-            <password>${NEXUS_PASSWORD}</password>
-        </server>
 
         <server>
             <id>nexus-snapshots</id>
             <username>${NEXUS_USERNAME}</username>
             <password>${NEXUS_PASSWORD}</password>
         </server>
+
+        <server>
+            <id>nexus-releases</id>
+            <username>${NEXUS_USERNAME}</username>
+            <password>${NEXUS_PASSWORD}</password>
+        </server>
+
     </servers>
 </settings>
 EOF
 
-                mvn deploy -s settings.xml
+                        mvn deploy \
+                          -s settings.xml \
+                          -DaltDeploymentRepository=nexus-snapshots::${NEXUS_URL}/repository/${NEXUS_SNAPSHOT_REPO}/
 
-                rm -f settings.xml
-            '''
+                        rm -f settings.xml
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage("Build & Push Docker Image") {
             steps {
                 script {
-                    docker.withRegistry('',DOCKER_PASS) {
+
+                    docker.withRegistry('', DOCKER_PASS) {
                         docker_image = docker.build "${IMAGE_NAME}"
                     }
 
-                    docker.withRegistry('',DOCKER_PASS) {
+                    docker.withRegistry('', DOCKER_PASS) {
                         docker_image.push("${IMAGE_TAG}")
                         docker_image.push('latest')
                     }
                 }
             }
-
-       }
+        }
     }
 }
