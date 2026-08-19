@@ -36,6 +36,41 @@ pipeline {
                 sh 'mvn test'
             }
         }
+		stage("Deploy to Nexus") {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'nexus',
+                usernameVariable: 'NEXUS_USERNAME',
+                passwordVariable: 'NEXUS_PASSWORD'
+            )
+        ]) {
+            sh '''
+                cat > settings.xml <<EOF
+<settings>
+    <servers>
+        <server>
+            <id>nexus-releases</id>
+            <username>${NEXUS_USERNAME}</username>
+            <password>${NEXUS_PASSWORD}</password>
+        </server>
+
+        <server>
+            <id>nexus-snapshots</id>
+            <username>${NEXUS_USERNAME}</username>
+            <password>${NEXUS_PASSWORD}</password>
+        </server>
+    </servers>
+</settings>
+EOF
+
+                mvn deploy -s settings.xml
+
+                rm -f settings.xml
+            '''
+        }
+    }
+}
         stage("Build & Push Docker Image") {
             steps {
                 script {
