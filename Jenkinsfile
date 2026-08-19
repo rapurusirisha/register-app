@@ -46,14 +46,6 @@ pipeline {
             }
         }
 
-        stage("SonarQube Analysis") {
-            steps {
-                withSonarQubeEnv('sonarid') {
-                    sh 'mvn sonar:sonar'
-                }
-            }
-        }
-
         stage("Deploy to Nexus") {
             steps {
                 withCredentials([
