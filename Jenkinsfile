@@ -16,6 +16,8 @@ pipeline {
         NEXUS_URL = "http://52.66.28.176:8081"
         NEXUS_SNAPSHOT_REPO = "maven-snapshots"
         NEXUS_RELEASE_REPO = "maven-releases"
+        //Jenkins
+        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
 
     stages {
