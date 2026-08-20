@@ -13,9 +13,11 @@ pipeline {
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
 
         // Nexus
+        /*
         NEXUS_URL = "http://52.66.28.176:8081"
         NEXUS_SNAPSHOT_REPO = "maven-snapshots"
         NEXUS_RELEASE_REPO = "maven-releases"
+        */
 
         // Jenkins
         JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
@@ -49,7 +51,8 @@ pipeline {
             }
         }
 
-       // stage("Deploy to Nexus") {
+        /*
+        stage("Deploy to Nexus") {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -86,6 +89,7 @@ EOF
                 }
             }
         }
+        */
 
         stage("Build Docker Image") {
             steps {
