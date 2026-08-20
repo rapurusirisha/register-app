@@ -16,7 +16,8 @@ pipeline {
         NEXUS_URL = "http://52.66.28.176:8081"
         NEXUS_SNAPSHOT_REPO = "maven-snapshots"
         NEXUS_RELEASE_REPO = "maven-releases"
-        //Jenkins
+
+        // Jenkins
         JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
 
@@ -57,12 +58,10 @@ pipeline {
                         passwordVariable: 'NEXUS_PASSWORD'
                     )
                 ]) {
-
                     sh '''
                         cat > settings.xml <<EOF
 <settings>
     <servers>
-
         <server>
             <id>nexus-snapshots</id>
             <username>${NEXUS_USERNAME}</username>
@@ -74,7 +73,6 @@ pipeline {
             <username>${NEXUS_USERNAME}</username>
             <password>${NEXUS_PASSWORD}</password>
         </server>
-
     </servers>
 </settings>
 EOF
@@ -131,6 +129,22 @@ EOF
                 """
             }
         }
+
+        stage("Trigger CD Pipeline") {
+            steps {
+                script {
+                    sh """
+                        curl -v -k \
+                        --user SirishaRapuru:${JENKINS_API_TOKEN} \
+                        -X POST \
+                        -H 'cache-control: no-cache' \
+                        -H 'content-type: application/x-www-form-urlencoded' \
+                        --data 'IMAGE_TAG=${IMAGE_TAG}' \
+                        'http://ec2-13-206-196-173.ap-south-1.compute.amazonaws.com:8080/job/CDpipeline/buildWithParameters?token=newcluster'
+                    """
+                }
+            }
+        }
     }
 
     post {
@@ -151,11 +165,4 @@ EOF
             sh 'rm -f settings.xml || true'
         }
     }
-    stage("Trigger CD Pipeline") {
-            steps {
-                script {
-                    sh "curl -v -k --user SirishaRapuru:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-13-206-196-173.ap-south-1.compute.amazonaws.com:8080/job/CDpipeline/buildWithParameters?token=newcluster'"
-                }
-            }
-       }
 }
